@@ -13,7 +13,7 @@ def gauss_elimination_with_partial_pivot(matrix, vector):
             m = A[j, i] / A[i, i]
             A[j, :] = A[j, :] - m * A[i, :]
             f[j] = f[j] - m * f[i]
-    return Back_Subs(A, f)
+    np.savetxt("gaussEliminationPivot.txt", np.transpose(Back_Subs(A, f)), fmt='%.2f')
 
 def Back_Subs(A, f):
     length = f.size

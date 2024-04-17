@@ -1,21 +1,29 @@
-def gaussianElimination(mat, vector, N):
- 
+import numpy as np
+
+def gaussianElimination(mat: np.ndarray, vector: np.ndarray) -> np.array:
+    N = len(mat)
+    
+    mat = mat.tolist
+    print(mat)
     for index, elem in enumerate(vector):
         mat[index].append(elem[0])
-
+        # np.append(mat[index], elem[0])
+    print(mat)
     return backSub(mat, N)
  
 
-def swap_row(mat, i, j, N):
+def swap_row(mat: np.array, i: int, j: int, N: int) -> np.array:
  
     for k in range(N + 1):
  
         temp = mat[i][k]
         mat[i][k] = mat[j][k]
         mat[j][k] = temp
+
+    return mat
  
 
-def forwardElim(mat, N):
+def forwardElim(mat: np.array, N: int) -> int:
     for k in range(N):
        
         i_max = k
@@ -30,7 +38,7 @@ def forwardElim(mat, N):
             return k
  
         if (i_max != k):
-            swap_row(mat, k, i_max, N)
+            mat = swap_row(mat, k, i_max, N)
  
         for i in range(k + 1, N):
             f = mat[i][k]/mat[k][k]
@@ -42,7 +50,7 @@ def forwardElim(mat, N):
  
     return -1
  
-def backSub(mat, N):
+def backSub(mat: np.array, N: int) -> np.array:
  
     x = [None for _ in range(N)]
 
@@ -55,14 +63,3 @@ def backSub(mat, N):
         x[i] = (x[i]/mat[i][i])
  
     return x
-
-if (__name__ == "__main__"):
-    # Przykładowe macierze A i B
-    matrix = [[10, -1, 2],
-            [-1, 11, -1],
-            [2, -1, 10]]
-    vector = [[6], [25], [-11]]
-
-
-    solution = gaussianElimination(matrix, vector, 3)
-    print(solution)
