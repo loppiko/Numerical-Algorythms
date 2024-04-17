@@ -4,6 +4,10 @@ import networkx as nx
 
 from nodeTypes import Path, Edge, Field
 
+from GaussSeidel import gauss_seidel
+from GaussWithBase import gauss_elimination_with_partial_pivot
+from GaussWithoutBase import gaussianElimination
+
 class NormalSimulation:
 
     allPaths: list[Path] = []
@@ -34,14 +38,15 @@ class NormalSimulation:
             if startEdge not in self.allEdges.keys():
                 self.allEdges[startEdge] = []
             if startEdge.edgeType == Field.EMPTY or startEdge.edgeType == Field.DUMPSTER:
-                self.allEdges[startEdge].append(endEdgeNumber)
+                self.allEdges[startEdge].append(int(endEdgeNumber))
             
             if endEdge not in self.allEdges.keys():
                 self.allEdges[endEdge] = []
             if endEdge.edgeType == Field.EMPTY or endEdge.edgeType == Field.DUMPSTER:
-                self.allEdges[endEdge].append(startEdgeNumber)
+                self.allEdges[endEdge].append(int(startEdgeNumber))
 
         # print({str(key): value for key, value in self.allEdges.items()})
+
         self.generateMatrix()
 
 
@@ -91,6 +96,10 @@ class NormalSimulation:
         np.savetxt("probabilityMatrix.txt", self.propabilityMatrix, fmt='%.2f')
         np.savetxt("probabilityResultMatrix.txt", self.resultMatrix, fmt='%.2f')
 
+        # gauss_seidel(self.propabilityMatrix, self.resultMatrix)
+        # gauss_elimination_with_partial_pivot(self.propabilityMatrix, self.resultMatrix)
+        # gaussianElimination(self.propabilityMatrix, self.resultMatrix)
+
     
     def addEdgeToMatrix(self, currEdge: Edge) -> None:
         if (not currEdge in self.positionOfEdges.keys()):
@@ -131,6 +140,65 @@ class NormalSimulation:
                 return True
             case _:
                 return False
+            
+    
+    def monteCarlo(self, edgeNumber: int, iterations: int) -> float:
+        
+        numberOfWins = 0
+        
+        for _ in range(iterations):
+            
+            startEdge, endEdge, currPath, currPosition = self.changePath(self.findEdge(edgeNumber), None, 0)
+
+            while True:
+                if (currPosition == 0):
+                    if (startEdge.edgeType == Field.EXIT):
+                        numberOfWins += 1
+                    if (startEdge.edgeType == Field.OSK or startEdge.edgeType == Field.EXIT):
+                        break
+                    startEdge, endEdge, currPath, currPosition = self.changePath(startEdge, endEdge, currPosition)
+                if (currPosition == currPath.weight + 1):
+                    if (endEdge.edgeType == Field.EXIT):
+                        numberOfWins += 1
+                    if (endEdge.edgeType == Field.OSK or endEdge.edgeType == Field.EXIT):
+                        break
+                    startEdge, endEdge, currPath, currPosition = self.changePath(startEdge, endEdge, currPosition)
+                else:
+                    backwardsDumpsterModificator = 25 if (currPosition == 1 and startEdge.edgeType == Field.DUMPSTER) else 0
+                    forwardDumpsterModificator = 25 if (currPosition == currPath.weight and endEdge.edgeType == Field.DUMPSTER) else 0
+                    currPosition += 1 if (np.random.randint(100) < 50 + backwardsDumpsterModificator - forwardDumpsterModificator) else -1
+
+        return numberOfWins / iterations
+                        
+
+
+    def changePath(self, startEdge: Edge, endEdge: Edge, currPosition: int) -> list[Edge, Edge, Path, int]:
+        if currPosition == 0 or endEdge is None:
+            endEdge = self.findEdge(np.random.choice(self.allEdges[startEdge]))
+        else:
+            startEdge = endEdge
+            endEdge = self.findEdge(np.random.choice(self.allEdges[startEdge]))
+        return startEdge, endEdge, Path(startEdge, endEdge, self.findPathWeight(startEdge.edgeNumber, endEdge.edgeNumber)), 1            
+
+
+    def findEdge(self, edgeNumber: int) -> Edge:
+        result = None
+
+        for edge in list(self.allEdges.keys()):
+            if (edge.edgeNumber == edgeNumber):
+                result = edge
+                break
+
+        return result
+    
+
+    def findPathWeight(self, startEdgeNumber: int, endEdgeNumber: int) -> Path:
+        for path in self.allPaths:
+            if (path.startEdge.edgeNumber == startEdgeNumber and path.endEdge.edgeNumber == endEdgeNumber) or (path.endEdge.edgeNumber == startEdgeNumber and path.startEdge.edgeNumber == endEdgeNumber):
+                result = path
+                break
+            
+        return result.weight
 
 
     def drawGraph(self) -> None:
@@ -162,3 +230,4 @@ class NormalSimulation:
 if (__name__ == "__main__"):
     normal = NormalSimulation()
     normal.readInput("input.conf")
+    print(normal.monteCarlo(3, 10000))

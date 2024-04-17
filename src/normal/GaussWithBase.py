@@ -1,28 +1,35 @@
-def gauss_elimination_partial_pivot(matrix, vector):
-    n = len(matrix)
+import numpy as np
 
-    for i in range(n):
-        # Wybór elementu podstawowego w kolumnie i
-        max_row = i
-        for k in range(i+1, n):
-            if abs(matrix[k][i]) > abs(matrix[max_row][i]):
-                max_row = k
-        matrix[i], matrix[max_row] = matrix[max_row], matrix[i]
-        vector[i], vector[max_row] = vector[max_row], vector[i]
+import numpy as np
 
-        # Eliminacja współczynników
-        for j in range(i+1, n):
-            factor = matrix[j][i] / matrix[i][i]
-            vector[j] -= factor * vector[i]
-            for k in range(i, n):
-                matrix[j][k] -= factor * matrix[i][k]
+def gauss_elimination_with_partial_pivot(matrix, vector):
+    A = np.array(matrix, dtype=float)
+    f = np.array(vector, dtype=float)
+    length = f.size
+    for i in range(0, length - 1):     
+        for j in range(i + 1, length):
+            if A[i, i] == 0:
+                break
+            m = A[j, i] / A[i, i]
+            A[j, :] = A[j, :] - m * A[i, :]
+            f[j] = f[j] - m * f[i]
+    return Back_Subs(A, f)
 
-    # Rozwiązanie układu równań
-    solution = [0] * n
-    for i in range(n - 1, -1, -1):
-        solution[i] = vector[i]
-        for j in range(i + 1, n):
-            solution[i] -= matrix[i][j] * solution[j]
-        solution[i] /= matrix[i][i]
+def Back_Subs(A, f):
+    length = f.size
+    x = np.zeros(length)
+    x[length - 1] = f[length - 1] / A[length - 1, length - 1]
+    for i in range(length - 2, -1, -1):
+        sum_ = 0
+        for j in range(i + 1, length): 
+            sum_ = sum_ + A[i, j] * x[j]
+        x[i] = (f[i] - sum_) / A[i, i]
+    return x
 
-    return solution
+
+if (__name__ == "__main__"):
+    A = np.array([[10, -1, 2],
+            [-1, 11, -1],
+            [2, -1, 10]])
+    f = np.array([[6], [25], [-11]])
+    print(gauss_elimination_with_partial_pivot(A,f))

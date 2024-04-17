@@ -1,5 +1,6 @@
 def gauss_seidel(matrix, vector, x0=None, tol=1e-6, max_iter=1000):
     n = len(matrix)
+    vector = [item for sublist in vector for item in sublist]
     if x0 is None:
         x0 = [0] * n  # Początkowe przybliżenie
 
@@ -11,20 +12,19 @@ def gauss_seidel(matrix, vector, x0=None, tol=1e-6, max_iter=1000):
             x_new[i] = (vector[i] - sum_) / matrix[i][i]
 
         # Sprawdzenie warunku stopu
-        if all(abs(x_new[i] - x[i]) < tol for i in range(n)):
+        if sum((x_new[i] - x[i]) ** 2 for i in range(n)) ** 0.5 < tol:
             return x_new
 
         x = x_new
 
     raise ValueError("Metoda Gaussa-Seidela nie zbiega się po podanej liczbie iteracji")
 
-# Przykładowe użycie
-matrix = [[10, -1, 2],
-          [-1, 11, -1],
-          [2, -1, 10]]
-vector = [6, 25, -11]
 
-solution = gauss_seidel(matrix, vector)
-print("Rozwiązanie:")
-for i, x in enumerate(solution):
-    print(f"x{i+1} =", x)
+if (__name__ == "__main__"):
+    matrix = [[10, -1, 2],
+            [-1, 11, -1],
+            [2, -1, 10]]
+    vector = [[6], [25], [-11]]
+
+    solution = gauss_seidel(matrix, vector)
+    print(solution)
