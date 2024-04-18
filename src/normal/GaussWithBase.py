@@ -25,11 +25,3 @@ def Back_Subs(A, f):
             sum_ = sum_ + A[i, j] * x[j]
         x[i] = (f[i] - sum_) / A[i, i]
     return x
-
-
-if (__name__ == "__main__"):
-    A = np.array([[10, -1, 2],
-            [-1, 11, -1],
-            [2, -1, 10]])
-    f = np.array([[6], [25], [-11]])
-    print(gauss_elimination_with_partial_pivot(A,f))

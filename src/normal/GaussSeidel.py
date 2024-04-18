@@ -18,13 +18,3 @@ def gauss_seidel(matrix, vector, x0=None, tol=1e-6, max_iter=1000):
         x = x_new
 
     raise ValueError("Metoda Gaussa-Seidela nie zbiega się po podanej liczbie iteracji")
-
-
-if (__name__ == "__main__"):
-    matrix = [[10, -1, 2],
-            [-1, 11, -1],
-            [2, -1, 10]]
-    vector = [[6], [25], [-11]]
-
-    solution = gauss_seidel(matrix, vector)
-    print(solution)
