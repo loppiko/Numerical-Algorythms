@@ -6,7 +6,7 @@ from nodeTypes import Path, Edge, Field
 
 from GaussSeidel import gauss_seidel
 from GaussWithBase import gauss_elimination_with_partial_pivot
-from GaussWithoutBase import gaussianElimination
+from GaussWithoutBase import gauss_Elimination
 
 class NormalSimulation:
 
@@ -68,6 +68,7 @@ class NormalSimulation:
         self.resultMatrix = np.transpose(np.zeros(self.totalNumberOfFields))
         self.propabilityMatrix = []
         self.positionOfEdges = {}
+
         
         for path in self.allPaths:
             self.addEdgeToMatrix(path.startEdge)
@@ -78,16 +79,17 @@ class NormalSimulation:
             else:
                 self.propabilityMatrix.append(self.calculateStandardRow(np.zeros(self.totalNumberOfFields), dumpsterModificator, previousEdge=self.positionOfEdges[path.startEdge]))
                 self.updateEdgeProbability(self.positionOfEdges[path.startEdge])
-                
+
 
             for _ in range(path.weight - 2):
                 self.propabilityMatrix.append(self.calculateStandardRow(np.zeros(self.totalNumberOfFields)))
 
 
             dumpsterModificator = 0 if (not path.endEdge.edgeType == Field.DUMPSTER) else 0.25
-            if not path.endEdge in self.positionOfEdges:
+        
+            if not path.endEdge in self.positionOfEdges and path.weight > 1:
                 self.propabilityMatrix.append(self.calculateStandardRow(np.zeros(self.totalNumberOfFields), dumpsterModificator))
-            else:
+            elif path.weight > 1:
                 self.propabilityMatrix.append(self.calculateStandardRow(np.zeros(self.totalNumberOfFields), dumpsterModificator, nextEdge=self.positionOfEdges[path.endEdge]))
                 self.updateEdgeProbability(self.positionOfEdges[path.endEdge])
 
@@ -96,9 +98,9 @@ class NormalSimulation:
         np.savetxt("probabilityMatrix.txt", self.propabilityMatrix, fmt='%.2f')
         np.savetxt("probabilityResultMatrix.txt", self.resultMatrix, fmt='%.2f')
 
-        # gauss_seidel(self.propabilityMatrix, self.resultMatrix)
-        # gauss_elimination_with_partial_pivot(self.propabilityMatrix, self.resultMatrix)
-        # gaussianElimination(self.propabilityMatrix, self.resultMatrix)
+        gauss_seidel(self.propabilityMatrix, self.resultMatrix)
+        gauss_elimination_with_partial_pivot(self.propabilityMatrix, self.resultMatrix)
+        gauss_Elimination(self.propabilityMatrix, self.resultMatrix)
 
     
     def addEdgeToMatrix(self, currEdge: Edge) -> None:
@@ -107,7 +109,12 @@ class NormalSimulation:
             currRow = np.zeros(self.totalNumberOfFields)
                 
             if (not self.updateResultMatrix(currEdge)):
-                self.propabilityMatrix.append(self.calculateStandardRow(currRow))
+                if len(self.propabilityMatrix) > 0:
+                    currRow[len(self.propabilityMatrix) - 1] = -0.5
+                currRow[len(self.propabilityMatrix)] = 1
+                if len(self.propabilityMatrix) + 1 < len(currRow):
+                    currRow[len(self.propabilityMatrix) + 1] = -0.5
+                self.propabilityMatrix.append(currRow)
             else:
                 currRow[len(self.propabilityMatrix)] = 1
                 self.propabilityMatrix.append(currRow)
@@ -117,17 +124,17 @@ class NormalSimulation:
         if (not np.all(list(map(lambda x: True if (x == 0.0 or x == 1.0) else False, self.propabilityMatrix[edgeIndex])))):
             currEdge = np.array(self.propabilityMatrix[edgeIndex])
             filteredIndicies = np.where((currEdge != 0.0) & (currEdge != 1.0))[0]
-            
+
             for index in filteredIndicies:
                 self.propabilityMatrix[edgeIndex][index] = -1.0 / (len(filteredIndicies) + 1)
             self.propabilityMatrix[edgeIndex][len(self.propabilityMatrix) - 1] = -1.0 / (len(filteredIndicies) + 1)
 
 
 
-    def calculateStandardRow(self, zeros: list, dumpsterModificator: float = 0.0, previousEdge: int = None, nextEdge: int = None) -> list[float]:
-        zeros[previousEdge if previousEdge is not None else len(self.propabilityMatrix) - 1] = -0.5 + dumpsterModificator
+    def calculateStandardRow(self, zeros: list, dumpsterModifier: float = 0.0, previousEdge: int = None, nextEdge: int = None) -> list[float]:
+        zeros[previousEdge if previousEdge is not None else len(self.propabilityMatrix) - 1] = -0.5 + dumpsterModifier
         zeros[len(self.propabilityMatrix)] = 1
-        zeros[nextEdge if nextEdge is not None else len(self.propabilityMatrix) + 1] = -0.5 - dumpsterModificator
+        zeros[nextEdge if nextEdge is not None else len(self.propabilityMatrix) + 1] = -0.5 - dumpsterModifier
         return zeros
 
 
@@ -199,6 +206,43 @@ class NormalSimulation:
                 break
             
         return result.weight
+    
+
+    def randomiseInput(self, numberOfEdges: int, numberOfPaths: int, numberOfOSK: int, numberOfExit: int, numberOfDumpsters: int) -> None:
+        randomisedInput = []
+        edgesToAdd = [x + 1 for x in range(numberOfEdges)]
+
+        randomisedInput.append([numberOfEdges, numberOfPaths])
+        for _ in range(numberOfPaths):
+            if (len(edgesToAdd) == 0):
+                randomisedInput.append([*np.random.randint(1, numberOfEdges + 1, size=2), np.random.randint(1, 15)])
+            else:
+                firstEdge = edgesToAdd[0]
+                secondEdge = np.random.randint(1, numberOfEdges + 1)
+                while firstEdge == secondEdge:
+                    secondEdge = np.random.randint(1, numberOfEdges + 1)
+                edgesToAdd = edgesToAdd[1:]
+                randomisedInput.append([firstEdge, secondEdge, np.random.randint(1, 15)])
+
+        randomisedInput.append([])
+        
+        allTypedEdges = set()
+        while len(allTypedEdges) < numberOfOSK+numberOfExit+numberOfDumpsters+1:
+            randNumber = np.random.randint(1, numberOfEdges + 1)
+            if (randNumber not in allTypedEdges):
+                allTypedEdges.add(randNumber)
+
+        allTypedEdges = list(allTypedEdges)
+
+        randomisedInput.append([numberOfOSK, *allTypedEdges[0:numberOfOSK]])
+        randomisedInput.append([numberOfExit, *allTypedEdges[numberOfOSK:numberOfOSK+numberOfExit]])
+        randomisedInput.append([1, *allTypedEdges[numberOfOSK+numberOfExit:numberOfOSK+numberOfExit+1]])
+        randomisedInput.append([numberOfDumpsters, *allTypedEdges[numberOfOSK+numberOfExit+1:numberOfOSK+numberOfExit+1+numberOfDumpsters]])
+        print(randomisedInput)
+
+        with open("inputRandom.conf", 'w') as file:
+            for row in randomisedInput:
+                file.write(" ".join(map(str, row)) + "\n")
 
 
     def drawGraph(self) -> None:
@@ -229,5 +273,7 @@ class NormalSimulation:
 
 if (__name__ == "__main__"):
     normal = NormalSimulation()
-    normal.readInput("input.conf")
-    print(normal.monteCarlo(3, 10000))
+    # normal.randomiseInput(10, 15, 2, 2, 0)
+    normal.readInput("input2.conf")
+    # normal.drawGraph()
+    # print(normal.monteCarlo(3, 100_000))

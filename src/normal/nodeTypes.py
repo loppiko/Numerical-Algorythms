@@ -24,7 +24,7 @@ class Edge():
 
 
 class Path():
-    def __init__(self, startEdge: Edge, endEdge: Edge, weight: float) -> None:
+    def __init__(self, startEdge: Edge, endEdge: Edge, weight: int) -> None:
         self.startEdge = startEdge
         self.endEdge = endEdge
         self.weight = weight

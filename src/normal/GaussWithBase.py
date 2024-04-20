@@ -1,7 +1,5 @@
 import numpy as np
 
-import numpy as np
-
 def gauss_elimination_with_partial_pivot(matrix, vector):
     A = np.array(matrix, dtype=float)
     f = np.array(vector, dtype=float)
@@ -13,7 +11,7 @@ def gauss_elimination_with_partial_pivot(matrix, vector):
             m = A[j, i] / A[i, i]
             A[j, :] = A[j, :] - m * A[i, :]
             f[j] = f[j] - m * f[i]
-    np.savetxt("gaussEliminationPivot.txt", np.transpose(Back_Subs(A, f)), fmt='%.2f')
+    np.savetxt("gaussEliminationPivot.txt", np.transpose(Back_Subs(A, f)), fmt='%.4f')
 
 def Back_Subs(A, f):
     length = f.size
